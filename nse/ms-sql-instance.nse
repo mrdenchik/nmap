@@ -49,9 +49,9 @@ action = function(host, port)
    return stdnse.format_output(false, output)
 -- return stdnse.format_output(false, instanceList or "")
   else
-   file = io.open("/home/sadmin/mssql.txt", "a+")
+   file = io.open("mssql.txt", "a+")
    for _, instance in ipairs(instanceList) do
-     print(instance:GetName())
+     --print(instance:GetName())
      file:write(instance:GetName().."\n")
    end
    file:flush()
