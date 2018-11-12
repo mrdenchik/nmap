@@ -51,8 +51,14 @@ action = function(host, port)
   else
    file = io.open("mssql.txt", "a+")
    for _, instance in ipairs(instanceList) do
-     --print(instance:GetName())
-     file:write(instance:GetName().."\n")
+     local iName = instance.instanceName;
+     if(iName == nil) then
+      iName = "nil"
+     end
+     --print(instance.serverName)
+     --print(host.name)
+     --file:write(host.name..'\\'..instance:GetName()..'\\'..iName.."\n")
+     file:write(host.name.."|"..host.ip.."|"..iName.."\n")
    end
    file:flush()
    file:close()
