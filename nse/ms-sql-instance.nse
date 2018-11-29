@@ -2,6 +2,7 @@ local mssql = require "mssql"
 local nmap = require "nmap"
 local smb = require "smb"
 local stdnse = require "stdnse"
+local io = require "io"
 
 description= [[ Description ]]
 
@@ -31,8 +32,11 @@ hostrule = function(host)
 end
 
 action = function(host, port)
-  local scriptOutput = stdnse.output_table()
 
+  local scriptOutput = stdnse.output_table()
+  local path = stdnse.get_script_args("path")
+  local dns = stdnse.get_script_args("dns")
+  
   local status, instanceList = mssql.Helper.GetTargetInstances(host)
   if(not status) then
    if(not mssql.Helper.WasDiscoveryPerformed(host)) then
@@ -47,18 +51,24 @@ action = function(host, port)
    local output = stdnse.output_table()
    output.hostname = host.name
    return stdnse.format_output(false, output)
--- return stdnse.format_output(false, instanceList or "")
+   -- return stdnse.format_output(false, instanceList or "")
   else
-   file = io.open("mssql.txt", "a+")
+   file = io.open(path, "a+")
    for _, instance in ipairs(instanceList) do
      local iName = instance.instanceName;
      if(iName == nil) then
       iName = "nil"
      end
-     --print(instance.serverName)
-     --print(host.name)
-     --file:write(host.name..'\\'..instance:GetName()..'\\'..iName.."\n")
-     file:write(host.name.."|"..host.ip.."|"..iName.."\n")
+     hName = host.name
+     if(host.name == nil or host.name == "") then
+      -- для ip из других сетей получим FQDN
+      local command = "nslookup "..host.ip.." "..dns.." | awk -F= '{printf $2}' |  sed 's/.$//' | sed 's/ //'"
+      local handle = io.popen(command)
+      hName = handle:read("*a")
+      handle:close()
+      --file:write("hName: "..hName.."\n")
+     end
+     file:write(hName.."|"..host.ip.."|"..iName.."\n")
    end
    file:flush()
    file:close()
