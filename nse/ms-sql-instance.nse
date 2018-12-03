@@ -55,23 +55,24 @@ action = function(host, port)
   else
    file = io.open(path, "a+")
    for _, instance in ipairs(instanceList) do
+
      local iName = instance.instanceName;
      if(iName == nil) then
       iName = "nil"
      end
      hName = host.name
-     if(host.name == nil or host.name == "") then
+
+     if(host.name == nil or host.name == "") then      
       -- для ip из других сетей получим FQDN
-      --local command = "nslookup "..host.ip.." "..dns.." | awk -F= '{printf $2}' |  sed 's/.$//' | sed 's/ //'"
-      local command = "nslookup -query=ptr "..host.ip.." "..dns.." | awk -F= '{printf $2}' |  sed 's/.$//' | sed '/^$/d' |sed 's/ //'"
-      local handle = io.popen(command)
-      hName = handle:read("*a")
-      handle:close()
-      -- если ptr записи нет  - не пишем в файл
-      if(hName ~= nil and hName ~= "") then
-	file:write(hName.."|"..host.ip.."|"..iName.."\n")
+      --local command = "nslookup "..host.ip.." "..dns.." | awk -F= '{printf $2}' | sed 's/.$//' | sed 's/ //'"
+      local command = "nslookup -query=ptr "..host.ip.." "..dns.." | awk -F= '{printf $2}' | sed 's/.$//' | sed '/^$/d' |sed 's/ //'"
+      hName = fbash(command)     
+       --если ptr записи нет - не пишем в файл
+      if(hName ~= "") then
+       file:write(hName.."|"..host.ip.."|"..iName.."\n")
       end
-      --file:write("hName: "..hName.."\n")
+     else
+      file:write(hName.."|"..host.ip.."|"..iName.."\n")
      end
    end
    file:flush()
@@ -79,4 +80,11 @@ action = function(host, port)
   end
 
   return scriptOutput
+end
+
+fbash = function(command)
+ local handle = io.popen(command)
+ local result = handle:read("*a")
+ handle:close()
+ return result
 end
