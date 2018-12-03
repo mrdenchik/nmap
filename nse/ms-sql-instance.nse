@@ -62,13 +62,17 @@ action = function(host, port)
      hName = host.name
      if(host.name == nil or host.name == "") then
       -- для ip из других сетей получим FQDN
-      local command = "nslookup "..host.ip.." "..dns.." | awk -F= '{printf $2}' |  sed 's/.$//' | sed 's/ //'"
+      --local command = "nslookup "..host.ip.." "..dns.." | awk -F= '{printf $2}' |  sed 's/.$//' | sed 's/ //'"
+      local command = "nslookup -query=ptr "..host.ip.." "..dns.." | awk -F= '{printf $2}' |  sed 's/.$//' | sed '/^$/d' |sed 's/ //'"
       local handle = io.popen(command)
       hName = handle:read("*a")
       handle:close()
+      -- если ptr записи нет  - не пишем в файл
+      if(hName ~= nil and hName ~= "") then
+	file:write(hName.."|"..host.ip.."|"..iName.."\n")
+      end
       --file:write("hName: "..hName.."\n")
      end
-     file:write(hName.."|"..host.ip.."|"..iName.."\n")
    end
    file:flush()
    file:close()
