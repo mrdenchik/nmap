@@ -3,6 +3,7 @@ local nmap = require "nmap"
 local smb = require "smb"
 local stdnse = require "stdnse"
 local io = require "io"
+local os = require "os"
 
 description= [[ Description ]]
 
@@ -58,7 +59,7 @@ action = function(host, port)
 
      local iName = instance.instanceName;
      if(iName == nil) then
-      iName = "nil"
+      iName = "MSSQLSERVER"
      end
      hName = host.name
 
@@ -66,13 +67,14 @@ action = function(host, port)
       -- для ip из других сетей получим FQDN
       --local command = "nslookup "..host.ip.." "..dns.." | awk -F= '{printf $2}' | sed 's/.$//' | sed 's/ //'"
       local command = "nslookup -query=ptr "..host.ip.." "..dns.." | awk -F= '{printf $2}' | sed 's/.$//' | sed '/^$/d' |sed 's/ //'"
-      hName = fbash(command)     
+      --print(command)
+      hName = f_ExecuteBash(command)     
        --если ptr записи нет - не пишем в файл
       if(hName ~= "") then
-       file:write(hName.."|"..host.ip.."|"..iName.."\n")
+       file:write(f_GetCurrentDateTime().."|"..string.upper(hName).."|"..host.ip.."|"..iName.."\n")
       end
      else
-      file:write(hName.."|"..host.ip.."|"..iName.."\n")
+      file:write(f_GetCurrentDateTime().."|"..string.upper(hName).."|"..host.ip.."|"..iName.."\n")
      end
    end
    file:flush()
@@ -82,9 +84,15 @@ action = function(host, port)
   return scriptOutput
 end
 
-fbash = function(command)
+f_ExecuteBash = function(command)
  local handle = io.popen(command)
  local result = handle:read("*a")
  handle:close()
+ return result
+end
+
+f_GetCurrentDateTime = function()
+ local datetime = os.date("*t", os.time())
+ local result = os.date("%Y-%m-%d %H:%M:%S", os.time())
  return result
 end
